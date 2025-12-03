@@ -179,6 +179,11 @@ const char *obs_module_name(void)
 	return obs_module_text("Module.Name");
 }
 
+const char *obs_module_description(void)
+{
+	return "Audio Video Sync Dock with WebSocket API support";
+}
+
 bool obs_module_load(void)
 {
 #if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(31, 0, 0)
