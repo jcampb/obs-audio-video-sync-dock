@@ -12,6 +12,11 @@ public:
 	SyncTestDock(QWidget *parent = nullptr);
 	~SyncTestDock();
 
+	// Remote control methods for WebSocket API
+	void startMeasurement();
+	void stopMeasurement();
+	bool isMeasuring() const { return sync_test != nullptr; }
+
 private:
 	QPushButton *startButton = nullptr;
 

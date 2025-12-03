@@ -25,6 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <obs-frontend-api.h>
 #include "plugin-macros.generated.h"
 #include "sync-test-dock.hpp"
+#include "sync-state.h"
 
 #define ASSERT_THREAD(type)                                                                     \
 	do {                                                                                    \
@@ -170,6 +171,9 @@ void SyncTestDock::on_start_stop()
 			startButton->setText(obs_module_text("Button.Stop"));
 
 		sync_test = o;
+
+		// Update global state for WebSocket API
+		sync_state_set_measuring(true);
 	}
 	else /* request to stop */ {
 		obs_output_stop(sync_test);
@@ -177,6 +181,9 @@ void SyncTestDock::on_start_stop()
 
 		if (startButton)
 			startButton->setText(obs_module_text("Button.Start"));
+
+		// Update global state for WebSocket API
+		sync_state_set_measuring(false);
 	}
 }
 
@@ -197,6 +204,9 @@ void SyncTestDock::on_video_marker_found(struct video_marker_found_s data)
 	frequencyDisplay->setText(QStringLiteral("%1 Hz").arg(data.qr_data.f));
 	int missed = missed_video_ix * 100 / (received_video_ix + missed_video_ix);
 	videoIndexDisplay->setText(QStringLiteral("%1 (%2% missed)").arg(index).arg(missed));
+
+	// Update global state for WebSocket API
+	sync_state_update_video(index, (double)data.qr_data.f);
 }
 
 void SyncTestDock::on_audio_marker_found(struct audio_marker_found_s data)
@@ -208,15 +218,71 @@ void SyncTestDock::on_audio_marker_found(struct audio_marker_found_s data)
 	received_audio_ix++;
 	int missed = missed_audio_ix * 100 / (received_audio_ix + missed_audio_ix);
 	audioIndexDisplay->setText(QStringLiteral("%1 (%2% missed)").arg(index).arg(missed));
+
+	// Update global state for WebSocket API
+	sync_state_update_audio(index);
 }
 
 void SyncTestDock::on_sync_found(uint64_t video_ts, uint64_t audio_ts, int index)
 {
 	int64_t ts = (int64_t)audio_ts - (int64_t)video_ts;
-	latencyDisplay->setText(QStringLiteral("%1 ms").arg(ts * 1e-6, 2, 'f', 1));
+	double latency_ms = ts * 1e-6;
+	latencyDisplay->setText(QStringLiteral("%1 ms").arg(latency_ms, 2, 'f', 1));
 	indexDisplay->setText(QStringLiteral("%1").arg(index));
 	if (ts > 0)
 		latencyPolarity->setText(obs_module_text("Display.Polarity.Positive"));
 	else if (ts < 0)
 		latencyPolarity->setText(obs_module_text("Display.Polarity.Negative"));
+
+	// Update global state for WebSocket API
+	sync_state_update_latency(latency_ms, index);
+}
+
+// Remote control methods for WebSocket API
+void SyncTestDock::startMeasurement()
+{
+	if (sync_test) {
+		blog(LOG_WARNING, "Measurement already in progress");
+		return;
+	}
+
+	// Trigger start measurement (same as button click)
+	QMetaObject::invokeMethod(this, "on_start_stop", Qt::QueuedConnection);
+}
+
+void SyncTestDock::stopMeasurement()
+{
+	if (!sync_test) {
+		blog(LOG_WARNING, "No measurement in progress");
+		return;
+	}
+
+	// Trigger stop measurement (same as button click)
+	QMetaObject::invokeMethod(this, "on_start_stop", Qt::QueuedConnection);
+}
+
+// C-callable wrapper functions for WebSocket API
+extern "C" {
+
+void sync_dock_start_measurement(void *dock)
+{
+	if (!dock)
+		return;
+	static_cast<SyncTestDock *>(dock)->startMeasurement();
+}
+
+void sync_dock_stop_measurement(void *dock)
+{
+	if (!dock)
+		return;
+	static_cast<SyncTestDock *>(dock)->stopMeasurement();
+}
+
+bool sync_dock_is_measuring(void *dock)
+{
+	if (!dock)
+		return false;
+	return static_cast<SyncTestDock *>(dock)->isMeasuring();
+}
+
 }
