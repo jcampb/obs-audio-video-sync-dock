@@ -41,10 +41,8 @@ private:
 	int received_audio_index_max = 0;
 	int audio_index_max = 0;
 
-private:
-	void on_start_stop();
-
 private slots:
+	void on_start_stop();
 	void on_video_marker_found(video_marker_found_s data);
 	void on_audio_marker_found(audio_marker_found_s data);
 	void on_sync_found(uint64_t video_ts, uint64_t audio_ts, int index);
