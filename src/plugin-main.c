@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <obs-module.h>
 #include <obs-frontend-api.h>
 #include <util/config-file.h>
+#include <pthread.h>
 #include "quirc.h"
 #include "obs-websocket-api.h"
 
