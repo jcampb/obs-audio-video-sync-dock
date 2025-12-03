@@ -34,7 +34,8 @@ static obs_websocket_vendor vendor = NULL;
 static void *g_dock_instance = NULL; // SyncTestDock pointer
 
 /* Global state for WebSocket API access */
-struct sync_state_t {
+struct sync_state_t
+{
 	pthread_mutex_t mutex;
 	double latency_ms;
 	int video_index;
@@ -213,8 +214,10 @@ void obs_module_post_load(void)
 	// Register WebSocket vendor
 	vendor = obs_websocket_register_vendor("audio_video_sync_dock");
 	if (!vendor) {
-		blog(LOG_WARNING, "[audio-video-sync-dock] Failed to register WebSocket vendor (obs-websocket not available)");
-	} else {
+		blog(LOG_WARNING,
+		     "[audio-video-sync-dock] Failed to register WebSocket vendor (obs-websocket not available)");
+	}
+	else {
 		// Register request handlers
 		if (!obs_websocket_vendor_register_request(vendor, "get_sync_state", get_sync_state_cb, NULL))
 			blog(LOG_WARNING, "[audio-video-sync-dock] Failed to register get_sync_state request");

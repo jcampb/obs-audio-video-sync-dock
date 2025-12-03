@@ -284,5 +284,4 @@ bool sync_dock_is_measuring(void *dock)
 		return false;
 	return static_cast<SyncTestDock *>(dock)->isMeasuring();
 }
-
 }
